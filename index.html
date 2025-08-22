@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern To-Do App</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- React and Vite setup -->
+    <script type="importmap">
+    {
+        "imports": {
+            "react": "https://esm.sh/react@18.2.0",
+            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client"
+        }
+    }
+    </script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@vitejs/plugin-react@4.0.3/dist/index.min.js"></script>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --card-gradient: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            --text-primary: #2d3748;
+            --text-secondary: #718096;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --shadow-hover: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-primary);
+        }
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: var(--secondary-gradient);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('https://placehold.co/1920x1080') center/cover;
+            opacity: 0.1;
+        }
+
+        .clock-container {
+            background: var(--card-gradient);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            margin-left: 2rem;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .analog-clock {
+            width: 200px;
+            height: 200px;
+            border: 10px solid var(--text-primary);
+            border-radius: 50%;
+            position: relative;
+            background: white;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .clock-hand {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform-origin: bottom center;
+            background: var(--text-primary);
+            border-radius: 10px;
+        }
+
+        .hour-hand {
+            width: 6px;
+            height: 60px;
+            margin-left: -3px;
+        }
+
+        .minute-hand {
+            width: 4px;
+            height: 80px;
+            margin-left: -2px;
+        }
+
+        .second-hand {
+            width: 2px;
+            height: 90px;
+            margin-left: -1px;
+            background: #e53e3e;
+        }
+
+        .clock-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 12px;
+            height: 12px;
+            background: var(--text-primary);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+
+        .clock-numbers {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .clock-number {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transform: rotate(calc(30deg * var(--n)));
+        }
+
+        .clock-number span {
+            display: inline-block;
+            transform: rotate(calc(-30deg * var(--n)));
+            padding-top: 10px;
+            font-size: 14px;
+        }
+
+        .task-form {
+            background: var(--card-gradient);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px 20px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-primary {
+            background: var(--success-gradient);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.4);
+        }
+
+        .task-card {
+            background: var(--card-gradient);
+            border: none;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .task-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .task-card.urgent {
+            border-left: 4px solid #e53e3e;
+        }
+
+        .task-card.completed {
+            opacity: 0.7;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+
+        .task-actions {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .task-card:hover .task-actions {
+            opacity: 1;
+        }
+
+        .btn-sm {
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-sm:hover {
+            transform: scale(1.05);
+        }
+
+        .deadline-badge {
+            background: var(--warning-gradient);
+            color: white;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @media (max-width: 768px) {
+            .clock-container {
+                margin-left: 0;
+                margin-bottom: 2rem;
+            }
+            
+            .analog-clock {
+                width: 150px;
+                height: 150px;
+            }
+            
+            .hour-hand { height: 45px; }
+            .minute-hand { height: 60px; }
+            .second-hand { height: 65px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="module">
+        import React, { useState, useEffect } from 'https://esm.sh/react@18.2.0';
+        import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+
+        // Clock Component
+        const AnalogClock = () => {
+            const [time, setTime] = useState(new Date());
+
+            useEffect(() => {
+                const timer = setInterval(() => {
+                    setTime(new Date());
+                }, 1000);
+                return () => clearInterval(timer);
+            }, []);
+
+            const hours = time.getHours() % 12;
+            const minutes = time.getMinutes();
+            const seconds = time.getSeconds();
+
+            const hourRotation = (hours * 30) + (minutes * 0.5);
+            const minuteRotation = (minutes * 6) + (seconds * 0.1);
+            const secondRotation = seconds * 6;
+
+            return React.createElement('div', { className: 'clock-container' },
+                React.createElement('h3', { className: 'text-center mb-3' }, 'Current Time'),
+                React.createElement('div', { className: 'analog-clock' },
+                    // Clock numbers
+                    ...[...Array(12)].map((_, i) => 
+                        React.createElement('div', {
+                            key: i,
+                            className: 'clock-number',
+                            style: { '--n': i }
+                        }, React.createElement('span', null, i === 0 ? 12 : i))
+                    ),
+                    // Clock hands
+                    React.createElement('div', {
+                        className: 'hour-hand clock-hand',
+                        style: { transform: `rotate(${hourRotation}deg)` }
+                    }),
+                    React.createElement('div', {
+                        className: 'minute-hand clock-hand',
+                        style: { transform: `rotate(${minuteRotation}deg)` }
+                    }),
+                    React.createElement('div', {
+                        className: 'second-hand clock-hand',
+                        style: { transform: `rotate(${secondRotation}deg)` }
+                    }),
+                    React.createElement('div', { className: 'clock-center' })
+                ),
+                React.createElement('div', { className: 'text-center mt-3' },
+                    React.createElement('h4', null, time.toLocaleTimeString()),
+                    React.createElement('p', { className: 'text-muted' }, time.toLocaleDateString())
+                )
+            );
+        };
+
+        // Task Item Component
+        const TaskItem = ({ task, onUpdate, onDelete, onToggleComplete }) => {
+            const [isEditing, setIsEditing] = useState(false);
+            const [editedTask, setEditedTask] = useState(task);
+
+            const handleUpdate = () => {
+                onUpdate(editedTask);
+                setIsEditing(false);
+            };
+
+            const isUrgent = task.deadline && new Date(task.deadline) - new Date() < 24 * 60 * 60 * 1000;
+
+            return React.createElement('div', {
+                className: `task-card card ${isUrgent ? 'urgent' : ''} ${task.completed ? 'completed' : ''}`
+            },
+                React.createElement('div', { className: 'card-body' },
+                    React.createElement('div', { className: 'd-flex justify-content-between align-items-start mb-2' },
+                        !isEditing ? 
+                            React.createElement('div', { className: 'flex-grow-1' },
+                                React.createElement('div', { className: 'form-check' },
+                                    React.createElement('input', {
+                                        type: 'checkbox',
+                                        className: 'form-check-input',
+                                        checked: task.completed,
+                                        onChange: () => onToggleComplete(task.id)
+                                    }),
+                                    React.createElement('label', {
+                                        className: `form-check-label ${task.completed ? 'text-decoration-line-through text-muted' : ''}`,
+                                        style: { fontSize: '1.1rem', fontWeight: '500' }
+                                    }, task.name)
+                                )
+                            ) :
+                            React.createElement('div', { className: 'flex-grow-1' },
+                                React.createElement('input', {
+                                    type: 'text',
+                                    className: 'form-control mb-2',
+                                    value: editedTask.name,
+                                    onChange: (e) => setEditedTask({ ...editedTask, name: e.target.value })
+                                }),
+                                React.createElement('input', {
+                                    type: 'datetime-local',
+                                    className: 'form-control',
+                                    value: editedTask.deadline || '',
+                                    onChange: (e) => setEditedTask({ ...editedTask, deadline: e.target.value })
+                                })
+                            ),
+                        React.createElement('div', { className: 'task-actions' },
+                            !isEditing ?
+                                React.createElement(React.Fragment, null,
+                                    React.createElement('button', {
+                                        className: 'btn btn-outline-primary btn-sm me-1',
+                                        onClick: () => setIsEditing(true)
+                                    }, React.createElement('i', { className: 'fas fa-edit' })),
+                                    React.createElement('button', {
+                                        className: 'btn btn-outline-danger btn-sm',
+                                        onClick: () => onDelete(task.id)
+                                    }, React.createElement('i', { className: 'fas fa-trash' }))
+                                ) :
+                                React.createElement(React.Fragment, null,
+                                    React.createElement('button', {
+                                        className: 'btn btn-success btn-sm me-1',
+                                        onClick: handleUpdate
+                                    }, React.createElement('i', { className: 'fas fa-check' })),
+                                    React.createElement('button', {
+                                        className: 'btn btn-secondary btn-sm',
+                                        onClick: () => setIsEditing(false)
+                                    }, React.createElement('i', { className: 'fas fa-times' }))
+                                )
+                        )
+                    ),
+                    task.deadline && React.createElement('div', { className: 'mt-2' },
+                        React.createElement('span', { className: 'deadline-badge' },
+                            React.createElement('i', { className: 'fas fa-clock me-1' }),
+                            `Due: ${new Date(task.deadline).toLocaleString()}`
+                        )
+                    )
+                )
+            );
+        };
+
+        // Task List Component
+        const TaskList = ({ tasks, onUpdate, onDelete, onToggleComplete }) => {
+            if (tasks.length === 0) {
+                return React.createElement('div', { className: 'empty-state' },
+                    React.createElement('i', { className: 'fas fa-clipboard-list' }),
+                    React.createElement('h4', null, 'No tasks yet!'),
+                    React.createElement('p', null, 'Add your first task to get started')
+                );
+            }
+
+            return React.createElement('div', { className: 'row' },
+                tasks.map(task => 
+                    React.createElement('div', { key: task.id, className: 'col-lg-6 col-xl-4 mb-3' },
+                        React.createElement(TaskItem, {
+                            task,
+                            onUpdate,
+                            onDelete,
+                            onToggleComplete
+                        })
+                    )
+                )
+            );
+        };
+
+        // Add Task Form Component
+        const AddTaskForm = ({ onAdd }) => {
+            const [taskName, setTaskName] = useState('');
+            const [deadline, setDeadline] = useState('');
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (taskName.trim()) {
+                    onAdd({
+                        id: Date.now(),
+                        name: taskName.trim(),
+                        deadline: deadline || null,
+                        completed: false
+                    });
+                    setTaskName('');
+                    setDeadline('');
+                }
+            };
+
+            return React.createElement('form', { onSubmit: handleSubmit, className: 'task-form' },
+                React.createElement('h4', { className: 'mb-3' }, 'Add New Task'),
+                React.createElement('div', { className: 'row' },
+                    React.createElement('div', { className: 'col-md-6 mb-2' },
+                        React.createElement('input', {
+                            type: 'text',
+                            className: 'form-control',
+                            placeholder: 'Enter task name...',
+                            value: taskName,
+                            onChange: (e) => setTaskName(e.target.value),
+                            required: true
+                        })
+                    ),
+                    React.createElement('div', { className: 'col-md-4 mb-2' },
+                        React.createElement('input', {
+                            type: 'datetime-local',
+                            className: 'form-control',
+                            value: deadline,
+                            onChange: (e) => setDeadline(e.target.value)
+                        })
+                    ),
+                    React.createElement('div', { className: 'col-md-2 mb-2' },
+                        React.createElement('button', {
+                            type: 'submit',
+                            className: 'btn btn-primary w-100'
+                        }, React.createElement('i', { className: 'fas fa-plus me-2' }), 'Add')
+                    )
+                )
+            );
+        };
+
+        // Main App Component
+        const App = () => {
+            const [tasks, setTasks] = useState([]);
+
+            const addTask = (task) => {
+                setTasks([...tasks, task]);
+            };
+
+            const updateTask = (updatedTask) => {
+                setTasks(tasks.map(task => task.id === updatedTask.id ? updatedTask : task));
+            };
+
+            const deleteTask = (id) => {
+                setTasks(tasks.filter(task => task.id !== id));
+            };
+
+            const toggleComplete = (id) => {
+                setTasks(tasks.map(task => 
+                    task.id === id ? { ...task, completed: !task.completed } : task
+                ));
+            };
+
+            return React.createElement('div', { className: 'app-container' },
+                React.createElement('div', { className: 'header' },
+                    React.createElement('h1', { className: 'display-4 fw-bold mb-3' }, 
+                        React.createElement('i', { className: 'fas fa-check-circle me-3' }),
+                        'Modern To-Do App'
+                    ),
+                    React.createElement('p', { className: 'lead' }, 'Stay organized and productive with our beautiful task manager')
+                ),
+                React.createElement('div', { className: 'container-fluid p-4' },
+                    React.createElement('div', { className: 'row' },
+                        React.createElement('div', { className: 'col-lg-8' },
+                            React.createElement(AddTaskForm, { onAdd: addTask }),
+                            React.createElement(TaskList, {
+                                tasks: tasks,
+                                onUpdate: updateTask,
+                                onDelete: deleteTask,
+                                onToggleComplete: toggleComplete
+                            })
+                        ),
+                        React.createElement('div', { className: 'col-lg-4' },
+                            React.createElement(AnalogClock)
+                        )
+                    )
+                )
+            );
+        };
+
+        // Render the app
+        const root = createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+    </script>
+</body>
+</html>
+
